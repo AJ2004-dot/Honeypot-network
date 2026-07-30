@@ -1,0 +1,78 @@
+# SSH Honeypot configuration
+# All paths are relative to the repository root unless absolute.
+
+ssh:
+  bind_address: "0.0.0.0"
+  port: 2222                       # put behind a real-port redirect (see docs/DEPLOYMENT.md) to expose as 22
+  host_key_path: "config/host_key" # generated with: paramiko RSAKey.generate(2048)
+  banner: "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3ubuntu0.6"
+  max_auth_tries: 6                 # how many credential attempts before disconnect
+  auth_delay_seconds: 1.2           # fake "checking credentials" delay
+  idle_timeout_seconds: 180
+  max_sessions: 200
+
+identity:
+  hostname: "prod-web-03"
+  domain: "internal.corp"
+  distro: "Ubuntu 22.04.4 LTS"
+  kernel: "5.15.0-105-generic"
+  motd: |
+    Welcome to Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-105-generic x86_64)
+
+     * Documentation:  https://help.ubuntu.com
+     * Management:     https://landscape.canonical.com
+     * Support:        https://ubuntu.com/pro
+
+      System information as of {timestamp}
+
+      System load:  0.08               Processes:           118
+      Usage of /:   42.7% of 29.38GB    Users logged in:     1
+      Memory usage: 21%                IPv4 address for eth0: 10.0.4.17
+
+    0 updates can be applied immediately.
+
+    Last login: {last_login} from 10.0.4.1
+
+  fake_users:
+    - {username: "root",     uid: 0,    gid: 0,    home: "/root",       shell: "/bin/bash"}
+    - {username: "ubuntu",   uid: 1000, gid: 1000, home: "/home/ubuntu", shell: "/bin/bash"}
+    - {username: "deploy",   uid: 1001, gid: 1001, home: "/home/deploy", shell: "/bin/bash"}
+    - {username: "www-data", uid: 33,   gid: 33,   home: "/var/www",     shell: "/usr/sbin/nologin"}
+    - {username: "mysql",    uid: 112,  gid: 118,  home: "/nonexistent", shell: "/usr/sbin/nologin"}
+    - {username: "redis",    uid: 113,  gid: 119,  home: "/var/lib/redis", shell: "/usr/sbin/nologin"}
+
+fake_services:
+  # Purely cosmetic: reported by ps/netstat/systemctl inside the shell, and
+  # optionally exposed as trivial banner-only TCP listeners (see server.py).
+  enabled: ["apache2", "nginx", "docker", "mysql", "redis-server", "ssh"]
+  expose_banner_ports: false     # if true, opens tiny banner-only sockets on the ports below
+  ports:
+    apache2: 80
+    nginx: 8080
+    docker: 2375
+    mysql: 3306
+    redis-server: 6379
+
+logging:
+  log_dir: "logs"
+  session_log_format: "json"     # one JSON file per session
+  app_log_file: "logs/honeypot.log"
+  level: "INFO"
+
+malware_capture:
+  enabled: true
+  never_download: true           # hard-coded safety switch, cannot be disabled by attacker input
+  capture_log: "logs/malware_capture.jsonl"
+
+geoip:
+  enabled: true
+  city_db: "config/GeoLite2-City.mmdb"
+  asn_db: "config/GeoLite2-ASN.mmdb"
+
+fingerprint:
+  enabled: true
+  log_file: "logs/fingerprints.jsonl"
+
+dashboard:
+  refresh_seconds: 5
+  logs_glob: "logs/session_*.json"

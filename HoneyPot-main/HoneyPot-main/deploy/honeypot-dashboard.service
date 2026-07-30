@@ -1,0 +1,21 @@
+[Unit]
+Description=SSH honeypot Streamlit dashboard
+After=network.target ssh-honeypot.service
+
+[Service]
+Type=simple
+User=honeypot
+Group=honeypot
+WorkingDirectory=/opt/ssh-honeypot
+ExecStart=/opt/ssh-honeypot/venv/bin/streamlit run dashboard/app.py --server.address=127.0.0.1 --server.port=8501
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/ssh-honeypot/logs
+
+[Install]
+WantedBy=multi-user.target

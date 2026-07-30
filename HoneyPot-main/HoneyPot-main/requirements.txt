@@ -1,0 +1,9 @@
+paramiko>=3.4,<4.0
+PyYAML>=6.0
+streamlit>=1.32
+pandas>=2.0
+plotly>=5.18
+geoip2>=4.8
+pydeck>=0.8
+networkx>=3.2
+pytest>=8.0

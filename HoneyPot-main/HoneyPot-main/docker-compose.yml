@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  honeypot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ssh-honeypot:latest
+    container_name: ssh-honeypot
+    restart: unless-stopped
+    # Expose the fake SSH service on the real port 22 of the host.
+    # Change "22:2222" to e.g. "2222:2222" if you'd rather keep the real
+    # port free (see docs/DEPLOYMENT.md for iptables-based redirection
+    # instead, which is usually the safer option on a shared host).
+    ports:
+      - "2222:2222"
+    volumes:
+      - ./logs:/app/logs
+      - ./config/config.yaml:/app/config/config.yaml:ro
+      - ./config/host_key:/app/config/host_key:ro
+      # Uncomment if you've downloaded MaxMind GeoLite2 databases:
+      # - ./config/GeoLite2-City.mmdb:/app/config/GeoLite2-City.mmdb:ro
+      # - ./config/GeoLite2-ASN.mmdb:/app/config/GeoLite2-ASN.mmdb:ro
+    networks:
+      - honeypot-net
+    # Defense in depth: the honeypot never needs outbound access.
+    # (Requires Docker's default bridge + an external firewall rule, or a
+    # custom network with internet_access disabled, per your Docker version.)
+
+  dashboard:
+    image: ssh-honeypot:latest
+    container_name: ssh-honeypot-dashboard
+    restart: unless-stopped
+    depends_on:
+      - honeypot
+    entrypoint: ["streamlit", "run", "dashboard/app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./logs:/app/logs:ro
+      - ./config/config.yaml:/app/config/config.yaml:ro
+    networks:
+      - honeypot-net
+
+networks:
+  honeypot-net:
+    driver: bridge
