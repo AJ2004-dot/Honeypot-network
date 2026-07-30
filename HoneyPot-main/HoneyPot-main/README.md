@@ -113,11 +113,9 @@ This project is defensive tooling for research/education. By design:
 - Attacker input is **never** passed to a shell, `eval`, `exec`, or any
   interpreter — it's parsed and matched against a fake command table only.
 - `wget`/`curl` **never** perform real HTTP requests — URLs are only
-  logged.
+  logged.      
 - The honeypot **never** initiates outbound connections of any kind.
 - Run it as an unprivileged user, in a container, or in a VM/network
   segment with no access to anything sensitive. See `docs/DEPLOYMENT.md`.
 
 ## License
-
-MIT — see `LICENSE`.
